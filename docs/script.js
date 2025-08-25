@@ -56,7 +56,7 @@ function fillValues(g){
 }
 
 function renderOptions(list){
-  if (!genSelect) { console.error("❌ No existe #genSelect en el HTML"); return; }
+  if (!genSelect) { console.error("❌ Falta #genSelect en el HTML"); return; }
   const frag = document.createDocumentFragment();
   list.forEach(g => {
     const o = document.createElement('option');
@@ -70,37 +70,36 @@ function renderOptions(list){
 
 // --- Carga de datos ---
 async function loadData(){
-  try{
-    const r = await fetch('geneticas.json?v=' + Date.now(), { cache: 'no-store' });
-    if (!r.ok) throw new Error('No se pudo cargar geneticas.json ('+r.status+')');
-    const data = await r.json();
-    if (!Array.isArray(data) || !data.length) throw new Error('geneticas.json vacío o mal formado');
-    GENETICS = data;
-    console.log(`📦 Datos cargados: ${GENETICS.length} genéticas`);
-  }catch(e){
-    console.error("❌ Error cargando geneticas.json:", e);
-    alert("No se pudo cargar geneticas.json. Revisa que esté en /docs y bien formado.");
-    throw e;
-  }
+  const r = await fetch('geneticas.json?v=' + Date.now(), { cache: 'no-store' });
+  if (!r.ok) throw new Error('No se pudo cargar geneticas.json ('+r.status+')');
+  const data = await r.json();
+  if (!Array.isArray(data) || !data.length) throw new Error('geneticas.json vacío o mal formado');
+  GENETICS = data;
+  console.log(`📦 Datos cargados: ${GENETICS.length} genéticas`);
 }
 
 // --- Inicialización ---
 async function init(){
-  await loadData();
-  currentList = sortByName(GENETICS);
-  renderOptions(currentList);
+  try{
+    await loadData();
+    currentList = sortByName(GENETICS);
+    renderOptions(currentList);
 
-  const pre = getURLParam('g');
-  let initial = currentList[0];
-  if (pre) {
-    const found = GENETICS.find(g => norm(g.nombre) === norm(pre));
-    if (found) initial = found;
-  }
+    const pre = getURLParam('g');
+    let initial = currentList[0];
+    if (pre) {
+      const found = GENETICS.find(g => norm(g.nombre) === norm(pre));
+      if (found) initial = found;
+    }
 
-  if (initial && genSelect){
-    genSelect.value = initial.nombre;
-    fillValues(initial);
-    setURLParam('g', initial.nombre);
+    if (initial && genSelect){
+      genSelect.value = initial.nombre;
+      fillValues(initial);
+      setURLParam('g', initial.nombre);
+    }
+  }catch(e){
+    console.error(e);
+    clearValues();
   }
 }
 
