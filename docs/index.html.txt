@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Selector de genéticas · 4Elements</title>
+  <style>
+    :root{
+      --bg:#0b0b0f; --panel:#121219; --ink:#e9f0ee; --muted:#aeb7b4; --accent:#34d399; --accent-2:#22c55e;
+      --chip:#1b1b25; --border:#242433; --warn:#f59e0b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:linear-gradient(180deg,#0a0a0c 0%,#0b0b0f 100%);color:var(--ink)}
+    .wrap{max-width:1100px;margin:0 auto;padding:28px}
+    header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+    header .logo{width:40px;height:40px;border-radius:12px;background:radial-gradient(circle at 30% 30%,#34d399,transparent 60%),radial-gradient(circle at 70% 70%,#22c55e,transparent 60%),#0c0}
+    h1{font-size:clamp(18px,2.6vw,28px);margin:0;font-weight:700;letter-spacing:.2px}
+    p.sub{margin:4px 0 0;color:var(--muted);font-size:14px}
+
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px}
+    .grid{display:grid;gap:14px}
+    .grid.cols-2{grid-template-columns:1fr 1fr}
+    .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+    @media (max-width:900px){.grid.cols-3{grid-template-columns:1fr 1fr}}
+    @media (max-width:640px){.grid.cols-2,.grid.cols-3{grid-template-columns:1fr}}
+
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+    select, input[type="text"], .value{width:100%;border:1px solid var(--border);background:#0f0f16;color:var(--ink);border-radius:12px;padding:12px 12px;font-size:14px}
+    input[type="text"]{outline:none}
+    select{appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="%23aeb7b4"><path d="M5 7l5 6 5-6z"/></svg>');background-repeat:no-repeat;background-position:right 10px center;padding-right:36px}
+    .value{min-height:42px;display:flex;align-items:center}
+
+    .chips{display:flex;flex-wrap:wrap;gap:6px}
+    .chip{background:var(--chip);border:1px solid var(--border);padding:8px 10px;border-radius:999px;font-size:12px}
+    .chip.badge{background:linear-gradient(90deg, rgba(34,197,94,.12), rgba(52,211,153,.12));border-color:#1f3a2a}
+
+    .cards{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
+    @media (max-width:900px){.cards{grid-template-columns:1fr}}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px}
+    .card h3{margin:0 0 12px;font-size:15px;color:var(--muted);font-weight:600}
+    .kv{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .kv .item{background:#0f0f16;border:1px solid var(--border);border-radius:12px;padding:10px}
+    .kv .k{font-size:12px;color:var(--muted)}
+    .kv .v{font-size:14px;margin-top:4px}
+
+    .muted{color:var(--muted)}
+    .row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+    .row > div{flex:1 1 260px}
+
+    .foot{margin-top:20px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .btn{border:1px solid var(--border);background:#0f0f16;color:var(--ink);border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer}
+    .btn.primary{border-color:#214b33;background:linear-gradient(90deg,#1b2e23,#1a2b21);}
+    .small{font-size:12px}
+    .ok{color:var(--accent)}
+    .warn{color:var(--warn)}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo" aria-hidden="true"></div>
+      <div>
+        <h1>Listado de genéticas · Selector dinámico</h1>
+        <p class="sub">Elige tu genética en el desplegable (orden A→Z) y verás sus valores automáticamente.</p>
+      </div>
+    </header>
+
+    <!-- CONTROLES PRINCIPALES -->
+    <section class="panel" aria-labelledby="selector-title">
+      <h2 id="selector-title" class="sr-only">Selector</h2>
+      <div class="row">
+        <div>
+          <label for="filtro">Filtrar por nombre (opcional)</label>
+          <input id="filtro" type="text" placeholder="Empieza a escribir para filtrar…" autocomplete="off" />
+        </div>
+        <div>
+          <label for="genSelect">Genética</label>
+          <select id="genSelect" aria-describedby="sortNote"></select>
+          <div id="sortNote" class="small muted" style="margin-top:6px">Ordenado alfabéticamente (ignora acentos y mayúsculas).</div>
+        </div>
+      </div>
+
+      <div class="chips" style="margin-top:12px">
+        <span class="chip badge" id="badgeTipo">—</span>
+        <span class="chip" id="badgeStretch">Stretch: —</span>
+        <span class="chip" id="badgeHoja">Ratio hoja: —</span>
+        <span class="chip" id="badgeSens">Sensibilidad nutrientes: —</span>
+      </div>
+    </section>
+
+    <!-- TARJETAS DE VALORES -->
+    <section class="cards" style="margin-top:16px">
+      <article class="card">
+        <h3>Datos técnicos</h3>
+        <div class="kv">
+          <div class="item"><div class="k">THC (%)</div><div class="v" id="vTHC">—</div></div>
+          <div class="item"><div class="k">Semanas floración</div><div class="v" id="vSemanas">—</div></div>
+          <div class="item"><div class="k">Cruce / Origen</div><div class="v" id="vOrigen">—</div></div>
+          <div class="item"><div class="k">Tipo de flor</div><div class="v" id="vFlor">—</div></div>
+        </div>
+        <div class="kv" style="margin-top:10px">
+          <div class="item"><div class="k">EC Vegetativo (mS/cm)</div><div class="v" id="vECVeg">—</div></div>
+          <div class="item"><div class="k">EC Floración (mS/cm)</div><div class="v" id="vECFlor">—</div></div>
+          <div class="item"><div class="k">CO₂ objetivo (ppm)</div><div class="v" id="vCO2">—</div></div>
+          <div class="item"><div class="k">Sensibilidad a nutrientes</div><div class="v" id="vSens">—</div></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h3>Ambiente & luz</h3>
+        <div class="kv">
+          <div class="item"><div class="k">PPFD Veg (µmol·m⁻²·s⁻¹)</div><div class="v" id="vPPFDVeg">—</div></div>
+          <div class="item"><div class="k">PPFD Flor (µmol·m⁻²·s⁻¹)</div><div class="v" id="vPPFDFlor">—</div></div>
+          <div class="item"><div class="k">Temp. día (°C)</div><div class="v" id="vTempDia">—</div></div>
+          <div class="item"><div class="k">Temp. noche (°C)</div><div class="v" id="vTempNoche">—</div></div>
+          <div class="item"><div class="k">HR Veg (%)</div><div class="v" id="vHRVeg">—</div></div>
+          <div class="item"><div class="k">HR Flor (%)</div><div class="v" id="vHRFlor">—</div></div>
+        </div>
+        <div class="kv" style="margin-top:10px">
+          <div class="item"><div class="k">Stretch</div><div class="v" id="vStretch">—</div></div>
+          <div class="item"><div class="k">Ratio de hoja</div><div class="v" id="vHoja">—</div></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="card" style="margin-top:16px">
+      <h3>Parámetros de secado (orientativos)</h3>
+      <div class="kv">
+        <div class="item"><div class="k">Días</div><div class="v" id="vSecadoDias">—</div></div>
+        <div class="item"><div class="k">HR (%)</div><div class="v" id="vSecadoHR">—</div></div>
+        <div class="item"><div class="k">Temperatura (°C)</div><div class="v" id="vSecadoTemp">—</div></div>
+      </div>
+      <p class="small muted" style="margin-top:10px">Ajusta según densidad de flor, tamaño de ramas y caudal de aire. Evita corrientes directas.</p>
+    </section>
+
+    <div class="foot">
+      <div class="small muted">Deep‑link disponible: al elegir una genética, la URL añade <code>?g=Nombre</code> para compartir.</div>
+      <div>
+        <button class="btn" id="btnCopy">Copiar URL con selección</button>
+        <button class="btn primary" id="btnReset">Restablecer</button>
+      </div>
+    </div>
+
+    <p class="small muted" style="margin-top:12px">Nota: Los datos a continuación son de ejemplo. Sustitúyelos por tu base real o carga un <code>geneticas.json</code> externo.</p>
+  </div>
+
+  <script>
+    // --- 1) TU BASE DE DATOS (EJEMPLO). Reemplaza/expande estas entradas ---
+    const GENETICS = [
+      {
+        nombre: "Amnesia Haze",
+        origen: "(Haze × Afghani) × Laos",
+        thc: 22,
+        semanas: 10,
+        tipoFlor: "compacta",
+        ecVeg: 1.2,
+        ecFlor: 1.8,
+        ppfdVeg: 550,
+        ppfdFlor: 900,
+        co2: 900,
+        tempDia: 26,
+        tempNoche: 19,
+        hrVeg: "65–70",
+        hrFlor: "50–55",
+        stretch: "alto",
+        hoja: "poca",
+        sensibilidad: "media",
+        secadoDias: 12,
+        secadoHR: "58–60",
+        secadoTemp: 18
+      },
+      {
+        nombre: "Gelato 33",
+        origen: "Sunset Sherbet × Thin Mint",
+        thc: 24,
+        semanas: 9,
+        tipoFlor: "compacta",
+        ecVeg: 1.3,
+        ecFlor: 2.0,
+        ppfdVeg: 600,
+        ppfdFlor: 1000,
+        co2: 1000,
+        tempDia: 25,
+        tempNoche: 18,
+        hrVeg: "60–65",
+        hrFlor: "48–52",
+        stretch: "medio",
+        hoja: "media",
+        sensibilidad: "media",
+        secadoDias: 12,
+        secadoHR: "57–60",
+        secadoTemp: 18
+      },
+      {
+        nombre: "OG Kush",
+        origen: "Chemdawg × (Lemon Thai × Pakistani Kush)",
+        thc: 23,
+        semanas: 9,
+        tipoFlor: "compacta",
+        ecVeg: 1.4,
+        ecFlor: 2.1,
+        ppfdVeg: 600,
+        ppfdFlor: 1050,
+        co2: 1000,
+        tempDia: 26,
+        tempNoche: 19,
+        hrVeg: "60–65",
+        hrFlor: "48–52",
+        stretch: "medio",
+        hoja: "poca",
+        sensibilidad: "alta",
+        secadoDias: 11,
+        secadoHR: "55–58",
+        secadoTemp: 18
+      },
+      {
+        nombre: "Permanent Marker",
+        origen: "(Biscotti × Jealousy) × Sherb Bx",
+        thc: 26,
+        semanas: 9,
+        tipoFlor: "compacta",
+        ecVeg: 1.4,
+        ecFlor: 2.2,
+        ppfdVeg: 650,
+        ppfdFlor: 1100,
+        co2: 1100,
+        tempDia: 25,
+        tempNoche: 18,
+        hrVeg: "60–65",
+        hrFlor: "48–52",
+        stretch: "medio",
+        hoja: "mucha",
+        sensibilidad: "media",
+        secadoDias: 12,
+        secadoHR: "57–60",
+        secadoTemp: 18
+      },
+      {
+        nombre: "Super Boof",
+        origen: "Black Cherry Punch × Tropicana Cookies",
+        thc: 24,
+        semanas: 8,
+        tipoFlor: "compacta",
+        ecVeg: 1.3,
+        ecFlor: 2.0,
+        ppfdVeg: 600,
+        ppfdFlor: 1000,
+        co2: 1000,
+        tempDia: 25,
+        tempNoche: 18,
+        hrVeg: "60–65",
+        hrFlor: "48–52",
+        stretch: "bajo",
+        hoja: "media",
+        sensibilidad: "baja",
+        secadoDias: 10,
+        secadoHR: "55–58",
+        secadoTemp: 18
+      }
+    ];
+
+    // --- 2) UTILIDADES ---
+    const $ = sel => document.querySelector(sel);
+    const byId = id => document.getElementById(id);
+    const fmt = v => (v === undefined || v === null || v === "") ? "—" : v;
+    const collator = new Intl.Collator('es', { sensitivity: 'base', numeric: true });
+
+    function sortByName(arr){
+      return [...arr].sort((a,b)=> collator.compare(a.nombre, b.nombre));
+    }
+
+    function setURLParam(name, value){
+      const url = new URL(location.href);
+      if(value) url.searchParams.set(name, value); else url.searchParams.delete(name);
+      history.replaceState({}, '', url);
+    }
+
+    function getURLParam(name){
+      const url = new URL(location.href);
+      return url.searchParams.get(name);
+    }
+
+    // --- 3) RENDER SELECT Y FILTRO ---
+    const genSelect = byId('genSelect');
+    const filtro = byId('filtro');
+    let currentList = sortByName(GENETICS);
+
+    function renderOptions(list){
+      genSelect.innerHTML = '';
+      for(const g of list){
+        const opt = document.createElement('option');
+        opt.value = g.nombre;
+        opt.textContent = g.nombre;
+        genSelect.appendChild(opt);
+      }
+    }
+
+    function applyFilter(){
+      const q = filtro.value.trim().toLowerCase();
+      if(!q){
+        currentList = sortByName(GENETICS);
+      } else {
+        currentList = sortByName(
+          GENETICS.filter(g => g.nombre.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'').includes(
+            q.normalize('NFD').replace(/\p{Diacritic}/gu,'')
+          ))
+        );
+      }
+      renderOptions(currentList);
+      if(currentList.length){
+        genSelect.selectedIndex = 0;
+        fillValues(currentList[0]);
+        setURLParam('g', currentList[0].nombre);
+      }else{
+        clearValues();
+        setURLParam('g','');
+      }
+    }
+
+    filtro.addEventListener('input', applyFilter);
+
+    // --- 4) RELLENO DE VALORES ---
+    const fields = {
+      vTHC: g => `${fmt(g.thc)}%`,
+      vSemanas: g => fmt(g.semanas),
+      vOrigen: g => fmt(g.origen),
+      vFlor: g => fmt(g.tipoFlor),
+      vECVeg: g => fmt(g.ecVeg),
+      vECFlor: g => fmt(g.ecFlor),
+      vPPFDVeg: g => fmt(g.ppfdVeg),
+      vPPFDFlor: g => fmt(g.ppfdFlor),
+      vCO2: g => fmt(g.co2),
+      vTempDia: g => fmt(g.tempDia),
+      vTempNoche: g => fmt(g.tempNoche),
+      vHRVeg: g => fmt(g.hrVeg),
+      vHRFlor: g => fmt(g.hrFlor),
+      vStretch: g => fmt(capFirst(g.stretch)),
+      vHoja: g => fmt(capFirst(g.hoja)),
+      vSens: g => fmt(capFirst(g.sensibilidad)),
+      vSecadoDias: g => fmt(g.secadoDias),
+      vSecadoHR: g => fmt(g.secadoHR),
+      vSecadoTemp: g => fmt(g.secadoTemp)
+    };
+
+    function capFirst(s){ return (s||'').toString().replace(/^./, c=>c.toUpperCase()); }
+
+    function clearValues(){
+      for(const id in fields){ byId(id).textContent = '—'; }
+      byId('badgeTipo').textContent = '—';
+      byId('badgeStretch').textContent = 'Stretch: —';
+      byId('badgeHoja').textContent = 'Ratio hoja: —';
+      byId('badgeSens').textContent = 'Sensibilidad nutrientes: —';
+    }
+
+    function fillValues(g){
+      for(const id in fields){ byId(id).textContent = fields[id](g); }
+      byId('badgeTipo').textContent = `Flor ${g.tipoFlor || '—'}`;
+      byId('badgeStretch').textContent = `Stretch: ${g.stretch || '—'}`;
+      byId('badgeHoja').textContent = `Ratio hoja: ${g.hoja || '—'}`;
+      byId('badgeSens').textContent = `Sensibilidad nutrientes: ${g.sensibilidad || '—'}`;
+    }
+
+    genSelect.addEventListener('change', () => {
+      const name = genSelect.value;
+      const g = GENETICS.find(x => x.nombre === name);
+      if(g){ fillValues(g); setURLParam('g', g.nombre); }
+    });
+
+    // --- 5) INICIALIZACIÓN ---
+    function init(){
+      renderOptions(currentList);
+      const pre = getURLParam('g');
+      if(pre){
+        const found = GENETICS.find(g => g.nombre.toLowerCase() === pre.toLowerCase());
+        if(found){
+          genSelect.value = found.nombre; fillValues(found);
+        } else { genSelect.selectedIndex = 0; fillValues(currentList[0]); }
+      } else {
+        genSelect.selectedIndex = 0; fillValues(currentList[0]);
+      }
+    }
+
+    init();
+
+    // --- 6) ACCIONES ---
+    byId('btnCopy').addEventListener('click', async () => {
+      try{ await navigator.clipboard.writeText(location.href); alert('URL copiada al portapapeles'); }catch(e){ alert('No se pudo copiar la URL'); }
+    });
+
+    byId('btnReset').addEventListener('click', () => {
+      filtro.value = '';
+      currentList = sortByName(GENETICS);
+      renderOptions(currentList);
+      genSelect.selectedIndex = 0;
+      fillValues(currentList[0]);
+      setURLParam('g', currentList[0].nombre);
+    });
+
+    // --- 7) (OPCIONAL) CARGAR DESDE Archivo extern o geneticas.json ---
+    // Si prefieres mantener la base fuera de este HTML, crea un archivo geneticas.json
+    // con un array de objetos en el mismo formato que GENETICS y descomenta lo siguiente:
+    // fetch('geneticas.json')
+    //   .then(r => r.ok ? r.json() : Promise.reject())
+    //   .then(data => { GENETICS.splice(0, GENETICS.length, ...data); currentList = sortByName(GENETICS); init(); })
+    //   .catch(()=>{/* si no existe, sigue con el array embebido */});
+  </script>
+</body>
+</html>
