@@ -1,4 +1,6 @@
-// --- Referencias y utilidades ---
+console.log("✅ script.js cargado");
+
+// --- utilidades ---
 const byId = id => document.getElementById(id);
 const genSelect = byId('genSelect');
 const filtro = byId('filtro');
@@ -10,7 +12,7 @@ const capFirst = s => (s || '').toString().replace(/^./, c => c.toUpperCase());
 let GENETICS = [];
 let currentList = [];
 
-// Mapeo de IDs en tu HTML -> campos del objeto genética
+// Mapeo de IDs -> campos
 const fields = {
   vTHC:       g => `${fmt(g.thc)}%`,
   vSemanas:   g => fmt(g.semanas),
@@ -39,21 +41,22 @@ function getURLParam(name){ return new URL(location.href).searchParams.get(name)
 
 function clearValues(){
   for (const id in fields) byId(id).textContent = '—';
-  byId('badgeTipo').textContent    = '—';
-  byId('badgeStretch').textContent = 'Stretch: —';
-  byId('badgeHoja').textContent    = 'Ratio hoja: —';
-  byId('badgeSens').textContent    = 'Sensibilidad nutrientes: —';
+  byId('badgeTipo')?.textContent    = '—';
+  byId('badgeStretch')?.textContent = 'Stretch: —';
+  byId('badgeHoja')?.textContent    = 'Ratio hoja: —';
+  byId('badgeSens')?.textContent    = 'Sensibilidad nutrientes: —';
 }
 
 function fillValues(g){
   for (const id in fields) byId(id).textContent = fields[id](g);
-  byId('badgeTipo').textContent    = `Flor ${g.tipoFlor || '—'}`;
-  byId('badgeStretch').textContent = `Stretch: ${g.stretch || '—'}`;
-  byId('badgeHoja').textContent    = `Ratio hoja: ${g.hoja || '—'}`;
-  byId('badgeSens').textContent    = `Sensibilidad nutrientes: ${g.sensibilidad || '—'}`;
+  byId('badgeTipo')   && (byId('badgeTipo').textContent    = `Flor ${g.tipoFlor || '—'}`);
+  byId('badgeStretch')&& (byId('badgeStretch').textContent = `Stretch: ${g.stretch || '—'}`);
+  byId('badgeHoja')   && (byId('badgeHoja').textContent    = `Ratio hoja: ${g.hoja || '—'}`);
+  byId('badgeSens')   && (byId('badgeSens').textContent    = `Sensibilidad nutrientes: ${g.sensibilidad || '—'}`);
 }
 
 function renderOptions(list){
+  if (!genSelect) { console.error("❌ No existe #genSelect en el HTML"); return; }
   const frag = document.createDocumentFragment();
   list.forEach(g => {
     const o = document.createElement('option');
@@ -67,9 +70,18 @@ function renderOptions(list){
 
 // --- Carga de datos ---
 async function loadData(){
-  const r = await fetch('geneticas.json', { cache: 'no-store' });
-  const data = await r.json();
-  GENETICS = data;
+  try{
+    const r = await fetch('geneticas.json?v=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error('No se pudo cargar geneticas.json ('+r.status+')');
+    const data = await r.json();
+    if (!Array.isArray(data) || !data.length) throw new Error('geneticas.json vacío o mal formado');
+    GENETICS = data;
+    console.log(`📦 Datos cargados: ${GENETICS.length} genéticas`);
+  }catch(e){
+    console.error("❌ Error cargando geneticas.json:", e);
+    alert("No se pudo cargar geneticas.json. Revisa que esté en /docs y bien formado.");
+    throw e;
+  }
 }
 
 // --- Inicialización ---
@@ -85,24 +97,24 @@ async function init(){
     if (found) initial = found;
   }
 
-  genSelect.value = initial.nombre;
-  fillValues(initial);
-  setURLParam('g', initial.nombre);
-  console.log(`Cargadas ${GENETICS.length} genéticas desde geneticas.json`);
+  if (initial && genSelect){
+    genSelect.value = initial.nombre;
+    fillValues(initial);
+    setURLParam('g', initial.nombre);
+  }
 }
 
 // --- Eventos ---
-genSelect.addEventListener('change', () => {
+genSelect?.addEventListener('change', () => {
   const g = GENETICS.find(x => x.nombre === genSelect.value);
   if (g){ fillValues(g); setURLParam('g', g.nombre); }
 });
 
-filtro.addEventListener('input', () => {
+filtro?.addEventListener('input', () => {
   const q = filtro.value.trim();
-  if (!q) currentList = sortByName(GENETICS);
-  else {
-    currentList = sortByName(GENETICS.filter(g => norm(g.nombre).includes(norm(q))));
-  }
+  currentList = !q
+    ? sortByName(GENETICS)
+    : sortByName(GENETICS.filter(g => norm(g.nombre).includes(norm(q))));
   renderOptions(currentList);
   if (currentList.length){
     genSelect.value = currentList[0].nombre;
@@ -114,4 +126,5 @@ filtro.addEventListener('input', () => {
   }
 });
 
+// Go!
 init();
