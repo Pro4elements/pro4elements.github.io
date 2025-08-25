@@ -1,0 +1,51 @@
+/* Reinicio básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Estilo general */
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #f5f7fa;
+  color: #333;
+  line-height: 1.6;
+  padding: 20px;
+}
+
+/* Títulos */
+h1, h2, h3 {
+  color: #222;
+  margin-bottom: 10px;
+}
+
+/* Párrafos */
+p {
+  margin-bottom: 15px;
+}
+
+/* Enlaces */
+a {
+  color: #0077ff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Botón básico */
+button {
+  background-color: #0077ff;
+  color: #fff;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: #0059b3;
+}
