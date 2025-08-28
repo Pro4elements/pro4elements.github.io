@@ -171,5 +171,212 @@ document.getElementById('btnSave').addEventListener('click', ()=>{
   a.click();
 });
 </script>
+
+<script>
+/* ==========================================================
+   1. BANNER DE PRODUCTOS (SOLO IMÁGENES)
+   ========================================================== */
+let products = [
+  // {img:'base.png'},
+  // {img:'growth.png'},
+  // {img:'bloom.png'},
+  // {img:'atomforze.png'},
+  // {img:'hardcoreroots.png'}
+];
+
+const words = ['EC precisa','PPFD óptimo','CO₂ controlado','DLI calculado',
+  'VPD estable','Calidad máxima','Resina top','Aroma intacto',
+  'Cosecha pro','4ELEMENTS'];
+
+const prodTrack = document.getElementById('prodTrack');
+const wordsTrack = document.getElementById('wordsTrack');
+const preview   = document.getElementById('preview');
+const countEl   = document.getElementById('count');
+const picker    = document.getElementById('filePicker');
+const dropZone  = document.getElementById('dropZone');
+const btnSave   = document.getElementById('btnSave');
+
+function renderBanner(){
+  prodTrack.innerHTML = '';
+  const list = products.length ? [...products, ...products] : [];
+  list.forEach(p=>{
+    const it   = document.createElement('div'); it.className='item';
+    const pill = document.createElement('div'); pill.className='pill';
+    const img  = document.createElement('img'); img.src = p.img; img.alt='Producto';
+    pill.appendChild(img); it.appendChild(pill); prodTrack.appendChild(it);
+  });
+  wordsTrack.innerHTML='';
+  [...words,...words,...words].forEach(w=>{
+    const el=document.createElement('div'); el.className='word'; el.textContent=w; wordsTrack.appendChild(el);
+  });
+  if(preview){ preview.innerHTML=''; products.forEach(p=>{
+    const card=document.createElement('div'); card.className='thumb';
+    const img=document.createElement('img'); img.src=p.img; card.appendChild(img); preview.appendChild(card);
+  });}
+  if(countEl) countEl.textContent=`${products.length} imágenes`;
+}
+function normalizeImage(file, sizeW=400, sizeH=400){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas'); canvas.width=sizeW; canvas.height=sizeH;
+        const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,sizeW,sizeH);
+        const scale=Math.min(sizeW/img.width, sizeH/img.height);
+        const w=img.width*scale,h=img.height*scale;
+        const x=(sizeW-w)/2,y=(sizeH-h)/2;
+        ctx.imageSmoothingQuality='high'; ctx.drawImage(img,x,y,w,h);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror=reject; img.src=fr.result;
+    };
+    fr.onerror=reject; fr.readAsDataURL(file);
+  });
+}
+function addFiles(fileList){
+  if(!fileList||!fileList.length) return;
+  const files=[...fileList].filter(f=>/^image\//.test(f.type));
+  Promise.all(files.map(f=>normalizeImage(f,400,400))).then(arr=>{
+    arr.forEach(d=>products.push({img:d})); renderBanner();
+  });
+}
+if(picker) picker.addEventListener('change', e=> addFiles(e.target.files));
+if(dropZone){
+  ['dragenter','dragover'].forEach(ev=>dropZone.addEventListener(ev, e=>{e.preventDefault(); dropZone.style.borderColor='#58b7ff';}));
+  ['dragleave','drop'].forEach(ev=>dropZone.addEventListener(ev, e=>{e.preventDefault(); dropZone.style.borderColor='';}));
+  dropZone.addEventListener('drop', e=> addFiles(e.dataTransfer.files));
+}
+if(btnSave){
+  btnSave.addEventListener('click', ()=>{
+    const html=document.documentElement.outerHTML
+      .replace(/let products = \[[\s\S]*?\];/,`let products = ${JSON.stringify(products)};`);
+    const blob=new Blob([html],{type:'text/html;charset=utf-8;'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='4elements_full.html'; a.click();
+  });
+}
+
+/* ==========================================================
+   2. FICHA DE GENÉTICAS
+   ========================================================== */
+const COLUMNS=["Genética","Origen","THC %","EC Veg","EC Flor","PPFD Veg","PPFD max (sin CO2)","PPFD Flor max (con CO2)","Temperatura Día (°C)","Temperatura Noche (°C)","Humedad Veg (%)","Humedad Flor (%)","Semanas Floración","Secado (días)","Secado HR (%)","Secado Temp (°C)","Stretch","Tipo de flor","Sensibilidad a nutrientes","Ratio hoja","CO2 Max (ppm)","Recomendaciones"];
+let DATA=[];
+const geneSelect=document.getElementById('geneSelect');
+const genName=document.getElementById('genName');
+const kpis=document.getElementById('kpis');
+const grid=document.getElementById('grid');
+const caps=document.getElementById('caps');
+const countChip=document.getElementById('countChip');
+function populateGeneSelect(){
+  if(!DATA.length){ geneSelect.innerHTML='<option>— Sin datos —</option>'; return; }
+  const list=[...DATA].sort((a,b)=> (a["Genética"]||"").localeCompare(b["Genética"]||""));
+  geneSelect.innerHTML='<option value="">— Elegir genética —</option>'+list.map((d,i)=>`<option value="${i}">${d["Genética"]}</option>`).join('');
+  countChip.textContent=`${DATA.length} genéticas`;
+}
+function renderGene(idx){
+  if(idx===""||idx==null){genName.textContent="Selecciona una genética";kpis.innerHTML="";grid.innerHTML="";caps.innerHTML="";return;}
+  const d=DATA[Number(idx)];
+  genName.textContent=d["Genética"];
+  caps.innerHTML=`<span class="chip">${d["Origen"]||"—"}</span><span class="chip">${d["THC %"]||"—"} THC</span><span class="chip">Stretch: ${d["Stretch"]||"—"}</span>`;
+  const klist=[["EC Veg",d["EC Veg"]],["EC Flor",d["EC Flor"]],["PPFD Veg",d["PPFD Veg"]],["PPFD Flor max (con CO2)",d["PPFD Flor max (con CO2)"]],["CO2 Max (ppm)",d["CO2 Max (ppm)"]]];
+  kpis.innerHTML=klist.map(([l,v])=>`<div class="kpi"><div class="label">${l}</div><div class="value">${v??"—"}</div></div>`).join('');
+  const cards=[["Temperatura Día (°C)",d["Temperatura Día (°C)"]],["Temperatura Noche (°C)",d["Temperatura Noche (°C)"]],["Humedad Veg (%)",d["Humedad Veg (%)"]],["Humedad Flor (%)",d["Humedad Flor (%)"]],["Secado (días)",d["Secado (días)"]],["Secado HR (%)",d["Secado HR (%)"]],["Secado Temp (°C)",d["Secado Temp (°C)"]],["Tipo de flor",d["Tipo de flor"]],["Ratio hoja",d["Ratio hoja"]],["Sensibilidad a nutrientes",d["Sensibilidad a nutrientes"]],["Recomendaciones",d["Recomendaciones"]]];
+  grid.innerHTML=cards.map(([h,v])=>`<div class="card"><h4>${h}</h4><div class="value">${v??"—"}</div></div>`).join('');
+}
+if(geneSelect) geneSelect.addEventListener('change', e=>renderGene(e.target.value));
+
+document.getElementById('btnCSV')?.addEventListener('click',()=>{
+  const rows=[COLUMNS.join(','),...DATA.map(d=>COLUMNS.map(c=>JSON.stringify(d[c]??"")).join(','))];
+  const blob=new Blob([rows.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='geneticas.csv';a.click();
+});
+document.getElementById('btnPDF')?.addEventListener('click',()=>window.print());
+
+/* ==========================================================
+   3. CALCULADORA VPD
+   ========================================================== */
+const stage=document.getElementById('stage');
+const phase=document.getElementById('phase');
+const tair=document.getElementById('tair');
+const rh=document.getElementById('rh');
+const leafChk=document.getElementById('leafChk');
+const dleaf=document.getElementById('dleaf');
+const vpdAirEl=document.getElementById('vpdAir');
+const vpdLeafEl=document.getElementById('vpdLeaf');
+const rhTargetEl=document.getElementById('rhTarget');
+const gAir=document.getElementById('gAir');
+const gLeaf=document.getElementById('gLeaf');
+const gRh=document.getElementById('gRh');
+const targetAir=document.getElementById('targetAir');
+const VPD_RANGES={veg:{inicio:[0.7,0.9],media:[0.8,1.1],final:[0.9,1.2]},flo:{inicio:[1.1,1.3],media:[1.2,1.5],final:[1.3,1.6]}};
+function svp_kPa(T){return 0.6108*Math.exp((17.27*T)/(T+237.3));}
+function vpd_kPa(T,RH){const es=svp_kPa(T);return Math.max(0,es*(1-(Math.max(0,Math.min(100,RH))/100)));}
+function statusClass(val,min,max){if(val<min*0.94||val>max*1.06)return'bad';if(val<min||val>max)return'warn';return'ok';}
+function pctBetween(val,min,max){const lo=Math.max(0,min-0.3),hi=max+0.3;return Math.max(0,Math.min(100,((val-lo)/(hi-lo))*100));}
+function clamp(n,lo,hi){return Math.max(lo,Math.min(hi,n));}
+function updateVPD(){
+  const st=stage.value,ph=phase.value,[minV,maxV]=VPD_RANGES[st][ph];
+  const T=parseFloat(tair.value||'0'),RH=parseFloat(rh.value||'0');
+  const vpdAir=vpd_kPa(T,RH);
+  let vpdLeaf=vpdAir;
+  if(leafChk.checked){const Tleaf=T+parseFloat(dleaf.value||'0');vpdLeaf=vpd_kPa(Tleaf,RH);}
+  const es=svp_kPa(T);const rhMax=clamp(100*(1-(minV/es)),0,100);const rhMin=clamp(100*(1-(maxV/es)),0,100);
+  vpdAirEl.textContent=vpdAir.toFixed(2);vpdLeafEl.textContent=vpdLeaf.toFixed(2);rhTargetEl.textContent=`${rhMin.toFixed(0)}–${rhMax.toFixed(0)} %`;
+  targetAir.textContent=`Objetivo ${minV.toFixed(1)}–${maxV.toFixed(1)} kPa (${st==='veg'?'Veg':'Floración'} • ${ph})`;
+  vpdAirEl.className='status '+statusClass(vpdAir,minV,maxV); gAir.style.width=pctBetween(vpdAir,minV,maxV)+'%';
+  vpdLeafEl.className='status '+statusClass(vpdLeaf,minV,maxV); gLeaf.style.width=pctBetween(vpdLeaf,minV,maxV)+'%';
+  const rMid=(rhMin+rhMax)/2; gRh.style.width=clamp(100-Math.abs(RH-rMid)/((rhMax-rhMin)/2+1e-6)*100,0,100)+'%';
+}
+['input','change'].forEach(evt=>[stage,phase,tair,rh,leafChk,dleaf].forEach(el=>el?.addEventListener(evt,updateVPD)));
+document.getElementById('btnVPD')?.addEventListener('click',updateVPD);
+document.getElementById('btnVPDReset')?.addEventListener('click',()=>{stage.value='veg';phase.value='media';tair.value=26;rh.value=60;leafChk.checked=false;dleaf.value=-1;updateVPD();});
+
+/* ==========================================================
+   4. DIAGNÓSTICO IA (heurística offline + TF.js online)
+   ========================================================== */
+const netState=document.getElementById('netState');
+function setNetState(){netState.textContent='Estado: '+(navigator.onLine?'conexión activa':'sin conexión');}
+window.addEventListener('online',setNetState);window.addEventListener('offline',setNetState);setNetState();
+
+const fileInput=document.getElementById('file');
+const thumb=document.getElementById('thumb');
+let imgBitmap=null;
+fileInput?.addEventListener('change',async e=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  const url=URL.createObjectURL(f);
+  thumb.innerHTML=''; const img=document.createElement('img'); img.src=url; img.onload=()=>URL.revokeObjectURL(url); thumb.appendChild(img);
+  imgBitmap=await createImageBitmap(f);
+});
+function analyzeHeuristic(bitmap){
+  const W=320,H=240,canvas=document.createElement('canvas'); canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');ctx.drawImage(bitmap,0,0,W,H);
+  const data=ctx.getImageData(0,0,W,H).data;let n=W*H,yellow=0,necrosis=0,white=0,greenSum=0,g2=0;
+  for(let i=0;i<data.length;i+=4){const r=data[i],g=data[i+1],b=data[i+2];const max=Math.max(r,g,b),min=Math.min(r,g,b);const v=max;const s=max===0?0:(max-min)/max;let h=0;if(max===min){h=0;}else if(max===r){h=60*((g-b)/(max-min))+(g<b?360:0);}else if(max===g){h=60*((b-r)/(max-min))+120;}else{h=60*((r-g)/(max-min))+240;}if(h>35&&h<65&&s>0.15&&v>80)yellow++;if(v<55||(s>0.4&&h>10&&h<40&&v<90))necrosis++;if(v>230&&s<0.15)white++;greenSum+=g;g2+=g*g;}
+  const yp=yellow/n*100,np=necrosis/n*100,wp=white/n*100,gMean=greenSum/n,gStd=Math.sqrt(g2/n-gMean*gMean);
+  const hypos=[]; if(yp>12&&gMean<110){hypos.push({name:'Clorosis general (déficit de N)',score:0.8});}
+  if(np>3&&yp>6){hypos.push({name:'Bordes quemados/necrosis (K bajo/exceso sales)',score:0.7});}
+  else if(np>4){hypos.push({name:'Necrosis puntas (exceso fertilización)',score:0.6});}
+  if(yp>8&&gStd>35){hypos.push({name:'Clorosis internerval (déficit Mg)',score:0.65});}
+  if(wp>1.5){hypos.push({name:'Manchas blancas (oídio)',score:0.7});}
+  if(yp<6&&np<2&&wp<0.8){hypos.push({name:'Tejido sano',score:0.5});}
+  hypos.sort((a,b)=>b.score-a.score); return {hypos,canvas};
+}
+function renderResults(result,modeLabel){
+  const res=document.getElementById('res');const actions=document.getElementById('actions');
+  if(!result){res.textContent='Sube imagen primero';actions.textContent='—';return;}
+  const {hypos,canvas}=result; thumb.innerHTML=''; thumb.appendChild(canvas);
+  res.innerHTML=hypos.slice(0,3).map(h=>`<div>${h.name} <span class="chip">${modeLabel}</span></div>`).join('');
+  actions.textContent=hypos[0]?.name||'—';
+}
+document.getElementById('btnAnalyzeLocal')?.addEventListener('click',()=>{if(!imgBitmap){alert('Sube imagen');return;}renderResults(analyzeHeuristic(imgBitmap),'IA local');});
+async function ensureTF(){if(window.tf) return true; if(!navigator.onLine) return false; return new Promise(res=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js';s.onload=()=>res(true);s.onerror=()=>res(false);document.head.appendChild(s);});}
+document.getElementById('btnAnalyzeWeb')?.addEventListener('click',async()=>{if(!imgBitmap){alert('Sube imagen');return;}const ok=await ensureTF();renderResults(analyzeHeuristic(imgBitmap),ok?'IA web':'IA local');});
+
+/* ==========================================================
+   INICIALIZACIÓN
+   ========================================================== */
+document.addEventListener('DOMContentLoaded',()=>{
+  renderBanner(); updateVPD(); populateGeneSelect();
+});
+</script>
+  
 </body>
 </html>
