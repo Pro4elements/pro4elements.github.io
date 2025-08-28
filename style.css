@@ -32,3 +32,18 @@
   /* ... resto igual que la versión anterior (banner, pills, cards, kpis, vpd, drop area, gauges, etc.) */
 </style>
 
+.pill {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:220px;
+  height:140px;
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,.12);
+  background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+  box-shadow: 0 16px 36px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.pill img {
+  max-width:90%;
+  max-height:100%;
+}
