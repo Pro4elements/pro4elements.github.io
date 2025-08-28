@@ -163,55 +163,51 @@
 </main>
 
 <script>
-/* ---------- Banner productos con imágenes ---------- */
-const IMAGES = [
-  "img/products/HardcoreRoots.png",
-  "img/products/Active.png",
-  "img/products/Apotheosic.png",
-  "img/products/AtomForze.png",
-  "img/products/Base.png",
-  "img/products/Bloom.png",
-  "img/products/Growth.png",
-  "img/products/Glutton.png",
-  "img/products/GreenPerfect.png",
-  "img/products/Capillary.png",
-  "img/products/ZxrRoots.png",
-  "img/products/HungryBacter.png",
-  "img/products/Micrococktail.png",
-  "img/products/Rootikal.png",
-  "img/products/SugarRezum.png",
-  "img/products/UltraBooster.png",
-  "img/products/UltraSilk.png",
-  "img/products/UltraBigger.png",
-  "img/products/Tray.png"
+/* ---------- Banner productos con imágenes (con fallback de ruta) ---------- */
+const FILES = [
+  "HardcoreRoots.png","Active.png","Apotheosic.png","AtomForze.png","Base.png",
+  "Bloom.png","Growth.png","Glutton.png","GreenPerfect.png","Capillary.png",
+  "ZxrRoots.png","HungryBacter.png","Micrococktail.png", /* ojo si es Micro-Cocktail.png */
+  "Rootikal.png","SugarRezum.png","UltraBooster.png","UltraSilk.png",
+  "UltraBigger.png","Tray.png"
 ];
+
+// Prefijos de ruta: 1º intentamos ./img/products/, si falla probamos ../img/products/
+const PRIMARY_PREFIX = "img/products/";
+const FALLBACK_PREFIX = "../img/products/";
 
 const words = [
-  'EC precisa','PPFD óptimo','CO₂ controlado','DLI calculado',
-  'VPD estable','Calidad máxima','Resina top','Aroma intacto',
-  'Cosecha pro','4ELEMENTS'
+  "EC precisa","PPFD óptimo","CO₂ controlado","DLI calculado",
+  "VPD estable","Calidad máxima","Resina top","Aroma intacto",
+  "Cosecha pro","4ELEMENTS"
 ];
 
-function fillTicker() {
-  const track = document.getElementById('prodTrack');
-  const wtrack = document.getElementById('wordsTrack');
+function makeImg(src1, src2){
+  const img = new Image();
+  img.alt = "Producto 4Elements";
+  img.loading = "lazy";
+  img.src = src1;
+  img.onerror = () => { if (img.src !== src2) img.src = src2; }; // cambia a fallback si 404
+  return img;
+}
 
-  const list = [...IMAGES, ...IMAGES];
-  list.forEach(src => {
-    const it = document.createElement('div');
-    it.className = 'item';
-    const img = new Image();
-    img.src = src;
-    img.alt = "Producto 4Elements";
-    img.loading = 'lazy';
+function fillTicker() {
+  const track = document.getElementById("prodTrack");
+  const wtrack = document.getElementById("wordsTrack");
+
+  const list = [...FILES, ...FILES];
+  list.forEach(name => {
+    const it = document.createElement("div");
+    it.className = "item";
+    const img = makeImg(PRIMARY_PREFIX + name, FALLBACK_PREFIX + name);
     it.appendChild(img);
     track.appendChild(it);
   });
 
   const ww = [...words, ...words, ...words];
   ww.forEach(w => {
-    const el = document.createElement('div');
-    el.className = 'word';
+    const el = document.createElement("div");
+    el.className = "word";
     el.textContent = w;
     wtrack.appendChild(el);
   });
